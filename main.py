@@ -169,4 +169,4 @@ api.add_resource(Category, '/')
 
 
 if __name__ == '__main__':
-    app.run()  # run our Flask app
+    app.run(host='0.0.0.0', port=80)  # run our Flask app
