@@ -1,0 +1,134 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Get category</title>
+    <meta name="description" content="A simple HTML5 Template for new projects.">
+    <meta name="author" content="SitePoint">
+
+    <meta property="og:title" content="Get category">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.sitepoint.com/a-basic-html5-template/">
+    <meta property="og:description" content="Get category of point">
+    <meta property="og:image" content="image.png">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<!--     <link rel="stylesheet" href="css/styles.css?v=1.0"> -->
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBXDV6g-HAs1MwtH3TOMcyU_9pfERbXuB4"></script>
+    <script src="https://unpkg.com/location-picker/dist/location-picker.min.js"></script>
+    <style>
+    #map {
+        width: 100%;
+        height: 480px;
+    }
+    </style>
+
+</head>
+
+<body>
+
+<div id="map"></div>
+ <h2>Chosen Location</h2>
+        <form method="post">
+            <input type="text" id="lat" readonly="yes"><br>
+            <input type="text" id="lng" readonly="yes"><br>
+            <input type="text" id="year" >
+        </form>
+        <button id="confirmPosition" onClick="sendRequest();">Send</button>
+        <div> Category:</div>
+        <h3 id="output"> </h3>
+        <div> Neighborhood:</div>
+        <h3 id="neighborhood"> </h3>
+<script>
+var map;
+var marker = false;
+
+
+function initMap() {
+
+    //The center location of our map.
+    var centerOfMap = new google.maps.LatLng(41.040216,28.881624);
+
+    //Map options.
+    var options = {
+      center: centerOfMap, //Set center.
+      zoom: 18 //The zoom value.
+    };
+
+    //Create the map object.
+    map = new google.maps.Map(document.getElementById('map'), options);
+
+    //Listen for any clicks on the map.
+    google.maps.event.addListener(map, 'click', function(event) {
+        //Get the location that the user clicked.
+        var clickedLocation = event.latLng;
+        //If the marker hasn't been added.
+        if(marker === false){
+            //Create the marker.
+            marker = new google.maps.Marker({
+                position: clickedLocation,
+                map: map,
+                draggable: true //make it draggable
+            });
+            //Listen for drag events!
+            google.maps.event.addListener(marker, 'dragend', function(event){
+                markerLocation();
+            });
+        } else{
+            //Marker has already been added, so just change its location.
+            marker.setPosition(clickedLocation);
+        }
+        //Get the marker's location.
+        markerLocation();
+    });
+}
+
+//This function will get the marker's current location and then add the lat/long
+//values to our textfields so that we can save the location.
+function markerLocation(){
+    //Get location.
+    var currentLocation = marker.getPosition();
+    //Add lat and lng values to a field that we can save.
+    document.getElementById('lat').value = currentLocation.lat(); //latitude
+    document.getElementById('lng').value = currentLocation.lng(); //longitude
+    console.log(currentLocation.lat(), currentLocation.lng());
+}
+
+
+//Load the map when the page has finished loading.
+google.maps.event.addDomListener(window, 'load', initMap);
+
+function sendRequest () {
+    var lat = document.getElementById('lat').value
+    var lng = document.getElementById('lng').value
+    var year = document.getElementById('year').value
+    var data = {"x_coord": lng, "y_coord": lat, "year": year };
+    fetch("/", {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify( data)
+    })
+    .then(res => res.json())
+    .then(res => {
+      console.log("Request complete! response:", res);
+      document.getElementById('output').innerHTML = getCategory(res.category);
+      document.getElementById('neighborhood').innerHTML = res.neighborhood;
+    });
+}
+function getCategory ($i) {
+    var categories = ["Accessory", "Bakery", "Bank", "Beauty Care", "Betting", "Bookstore", "Cafe", "Cargo", "Charcuterie", "Clothing", "Depot", "Eatery", "Educational", "Empty", "Florist", "Furniture Store", "Gas Station", "Hardware Store", "Health", "Home Goods", "Jeweler", "Market", "Mobile Store", "Natural Gas Station", "Office", "Pharmacy", "Photographer Store", "Shoe and Bag Store", "Spice Store", "Toy and Game Store"]
+    return categories[parseInt($i) + 1];
+}
+
+</script>
+</body>
+</html>
+
