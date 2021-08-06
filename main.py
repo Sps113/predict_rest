@@ -86,10 +86,12 @@ class Category(Resource):
 
         from sklearn.neighbors import KNeighborsClassifier
         from sklearn.metrics import classification_report
+        from sklearn.tree import DecisionTreeClassifier
+        dtc = DecisionTreeClassifier()
 
         knn = KNeighborsClassifier()
-        knn.fit(X_train, y_train)
-        Y_pred = knn.predict(X_test)
+        dtc.fit(X_train, y_train)
+        Y_pred = dtc.predict(X_test)
         Y_test = y_test
 
         # check geo
@@ -100,7 +102,8 @@ class Category(Resource):
         fevzi = Polygon([(28.875267, 41.051028),
                             (28.877421, 41.047655),
                             (28.879829, 41.043863),
-                            (28.882416, 41.037665),
+                            (28.8813776, 41.0408277),
+                            (28.882416,	41.037665),
                             (28.886308, 41.036875),
                             (28.883373, 41.040463),
                             (28.886084, 41.041553),
@@ -111,14 +114,20 @@ class Category(Resource):
                             (28.878233, 41.049436),
                             (28.877826, 41.050082)])
         menderes = Polygon([(28.871350, 41.041570),
+                            (28.8716948, 41.0412201),
+                            (28.8718450, 41.0408155),
+                            (28.8721293, 41.0396664),
+                            (28.8722420, 41.0391040),
                             (28.872570, 41.038549),
                             (28.878304, 41.039085),
                             (28.882416, 41.037665),
                             (28.879829, 41.043863),
                             (28.874927, 41.045388),
                             (28.874794, 41.043424)])
-        mimar = Polygon([(28.882677, 41.037488),
+        mimar = Polygon([(28.8825524, 41.0374693),
+                            (28.8840008, 41.0357132),
                             (28.885477, 41.033995),
+                            (28.8895047, 41.0339814),
                             (28.893564, 41.034137),
                             (28.892879, 41.034887),
                             (28.886308, 41.036875)])
@@ -161,7 +170,7 @@ class Category(Resource):
             return {'error': "x:" + str(x_coord) + " y:" + str(y_coord) + ' - Place not in our Neighbourhoods'}, 200
 
         input_total = [x_coord] + [y_coord] + [year] + dop
-        data = knn.predict([input_total])  # convert dataframe to dictionary
+        data = dtc.predict([input_total])  # convert dataframe to dictionary
         return {'category': data[0].tolist(), 'neighborhood': neighborhood}, 200  # return data and 200 OK code
 
 
