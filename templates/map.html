@@ -118,7 +118,7 @@ function sendRequest () {
     })
     .then(res => res.json())
     .then(res => {
-      console.log("Request complete! response:", res);
+      console.log("Request complete! response:", res, res.category );
       document.getElementById('output').innerHTML = getCategory(res.category);
       document.getElementById('neighborhood').innerHTML = res.neighborhood;
     });
