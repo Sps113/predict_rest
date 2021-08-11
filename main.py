@@ -13,7 +13,7 @@ api = Api(app)
 
 class Category(Resource):
     def get(self):
-        resp = make_response( render_template('map.html'), 200)
+        resp = make_response(render_template('map.html'), 200)
         return resp
 
     def post(self):
@@ -173,8 +173,13 @@ class Category(Resource):
         data = dtc.predict([input_total])  # convert dataframe to dictionary
         return {'category': data[0].tolist(), 'neighborhood': neighborhood}, 200  # return data and 200 OK code
 
+class ImageHandler(Resource):
+    def get(self):
+        resp = make_response(render_template('image.html'), 200)
+        return resp
 
-api.add_resource(Category, '/')
+api.add_resource(Category, '/geo')
+api.add_resource(ImageHandler, '/')
 
 
 if __name__ == '__main__':
