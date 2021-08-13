@@ -2,13 +2,25 @@ import numpy as np
 import pandas as pd
 import sklearn.preprocessing as pp
 # import matplotlib.pyplot as plt
-
-from flask import render_template, make_response, Flask
+import werkzeug
+from flask import render_template, make_response, Flask, request, url_for, redirect, flash, jsonify
 from flask_restful import Resource, Api, reqparse
+from werkzeug.utils import secure_filename
+# from  image_quality_assessment.src.evaluater.predict import predict
+import sys
+from os import path
+sys.path.append(path.abspath('image_quality_assessment/src'))
+from evaluater.predict import predict
+import os
 import pandas as pd
 import ast
+from pprint import pprint
 app = Flask(__name__)
 api = Api(app)
+uploads_dir = 'uploads'
+
+ALLOWED_EXTENSIONS = {'jpg', 'jpeg'}
+UPLOAD_FOLDER = 'uploads'
 
 
 class Category(Resource):
@@ -173,14 +185,36 @@ class Category(Resource):
         data = dtc.predict([input_total])  # convert dataframe to dictionary
         return {'category': data[0].tolist(), 'neighborhood': neighborhood}, 200  # return data and 200 OK code
 
+
 class ImageHandler(Resource):
     def get(self):
         resp = make_response(render_template('image.html'), 200)
         return resp
+
+    def allowed_file(self, filename):
+        return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+    def post(self):
+
+        file_path = os.path.join(uploads_dir, secure_filename("save.jpg"))
+
+        file = request.files['file']
+        # If the user does not select a file, the browser submits an
+        # empty file without a filename.
+        if file.filename == '':
+            # flash('No selected file')
+            return redirect(request.url)
+        pprint(file.filename)
+        if file and self.allowed_file(filename=file.filename):
+            file_path = os.path.join(uploads_dir, secure_filename(file.filename))
+            file.save(file_path)
+            return predict('Nima', 'fff', file_path)
+
 
 api.add_resource(Category, '/geo')
 api.add_resource(ImageHandler, '/')
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80)  # run our Flask app
+    app.run(host='0.0.0.0')
+    app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
