@@ -6,11 +6,12 @@ import werkzeug
 from flask import render_template, make_response, Flask, request, url_for, redirect, flash, jsonify
 from flask_restful import Resource, Api, reqparse
 from werkzeug.utils import secure_filename
-# from  image_quality_assessment.src.evaluater.predict import predict
+# from image_quality_assessment.src.evaluater.predict import predict
 import sys
+import subprocess
 from os import path
-sys.path.append(path.abspath('image_quality_assessment/src'))
-from evaluater.predict import predict
+# sys.path.append(path.abspath('image_quality_assessment/src'))
+# from evaluater.predict import predict
 import os
 import pandas as pd
 import ast
@@ -208,7 +209,11 @@ class ImageHandler(Resource):
         if file and self.allowed_file(filename=file.filename):
             file_path = os.path.join(uploads_dir, secure_filename(file.filename))
             file.save(file_path)
-            return predict('Nima', 'fff', file_path)
+            bash_command = "./predict  --docker-image nima-cpu --base-model-name MobileNet --weights-file $(pwd)/image_quality_assessment/models/MobileNet/weights_mobilenet_aesthetic_0.07.hdf5 --image-source $(pwd)/uploads/"
+            process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
+            output, error = process.communicate()
+
+            return True
 
 
 api.add_resource(Category, '/geo')
