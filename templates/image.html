@@ -101,7 +101,7 @@
  .uploader #response #messages {
 	 margin-bottom: 0.5rem;
 }
- .uploader #file-image {
+ .preview, .uploader #file-image {
 	 display: inline;
 	 margin: 0 auto 0.5rem auto;
 	 width: auto;
@@ -181,17 +181,17 @@
 
 
   <!-- Upload  -->
-  <form id="file-upload-form" class="uploader">
-    <input id="file-upload" type="file" name="fileUpload" accept="image/*" />
+  <form id="file-upload-form" class="uploader" enctype="multipart/form-data">
+    <input id="file-upload" type="file" name="mfiles" accept="image/jpeg" multiple />
 
     <label for="file-upload" id="file-drag">
-      <img id="file-image" src="#" alt="Preview" class="hidden">
       <div id="start">
         <i class="fa fa-download" aria-hidden="true"></i>
         <div>Select image</div>
         <div id="notimage" class="hidden">Please select jpeg only</div>
         <span id="file-upload-btn" class="btn btn-primary">Select a file</span>
       </div>
+      <img id="file-image" src="#" alt="Preview" class="hidden">
       <div id="response" class="hidden">
         <div id="messages"></div>
         <progress class="progress" id="file-progress" value="0">
@@ -203,6 +203,7 @@
   <script>
     // File Upload
     //
+    var files = [];
     function ekUpload(){
       function Init() {
 
@@ -242,9 +243,11 @@
 
         // Process all File objects
         for (var i = 0, f; f = files[i]; i++) {
-          parseFile(f);
-          uploadFile(f);
+          parseFile(f,i);
+          //uploadFile(f);
+          console.log(i)
         }
+        addButton();
       }
 
       // Output
@@ -254,25 +257,38 @@
         m.innerHTML = msg;
       }
 
-      function parseFile(file) {
+      function addButton() {
+        var div = document.createElement("div");
+        if(!document.getElementById('files-rate')) {
+          div.innerHTML = "<span id='files-rate' class='btn btn-primary'>Get rate</span>";
+          document.getElementById('file-upload-form').insertBefore(div,null);
+          document.getElementById('files-rate').addEventListener('click', uploadFile, false);
+        }
+      }
+
+      function parseFile(file,i) {
 
         console.log(file.name);
-        output(
-          '<strong>' + encodeURI(file.name) + '</strong>'
-        );
 
-        // var fileType = file.type;
-        // console.log(fileType);
+        var fileType = file.type;
+        console.log(fileType);
         var imageName = file.name;
 
-        var isGood = (/\.(?=gif|jpg|png|jpeg)/gi).test(imageName);
+        var isGood = (/\.(?=jpg|jpeg)/gi).test(imageName);
         if (isGood) {
           document.getElementById('start').classList.add("hidden");
           document.getElementById('response').classList.remove("hidden");
           document.getElementById('notimage').classList.add("hidden");
           // Thumbnail Preview
-          document.getElementById('file-image').classList.remove("hidden");
-          document.getElementById('file-image').src = URL.createObjectURL(file);
+          var div = document.createElement("div");
+          div.innerHTML = "<img class='preview thumbnail-" + i + "' src='" + URL.createObjectURL(file) + "'" +
+                  " title='" + file.name + "'/><div id='response-" + i +
+                  "'><div id='messages-" + i + "'><strong>" + file.name + "</strong></div>";
+
+          document.getElementById('file-drag').insertBefore(div,null);
+          files.push(file)
+          // document.getElementById('file-image').classList.remove("hidden");
+          // document.getElementById('file-image').src = URL.createObjectURL(file);
         }
         else {
           document.getElementById('file-image').classList.add("hidden");
@@ -299,40 +315,29 @@
         }
       }
 
-      function uploadFile(file) {
-
-        var xhr = new XMLHttpRequest(),
-          fileInput = document.getElementById('class-roster-file'),
-          pBar = document.getElementById('file-progress'),
-          fileSizeLimit = 1024; // In MB
-        if (xhr.upload) {
-          // Check if file is less than x MB
+      function uploadFile() {
+        files.forEach( (file) => {
+          var  fileSizeLimit = 24; // In MB
           if (file.size <= fileSizeLimit * 1024 * 1024) {
-            // Progress bar
-            pBar.style.display = 'inline';
-            xhr.upload.addEventListener('loadstart', setProgressMaxValue, false);
-            xhr.upload.addEventListener('progress', updateFileProgress, false);
-
-            // File received / failed
-            xhr.onreadystatechange = function(e) {
-              if (xhr.readyState == 4) {
-                // Everything is good!
-
-                // progress.className = (xhr.status == 200 ? "success" : "failure");
-                // document.location.reload(true);
-              }
+            var formData = new FormData();
+            formData.append('file',file,file.name);
+            const upload = (file) => {
+              fetch(document.getElementById('file-upload-form').action, { // Your POST endpoint
+                method: 'POST',
+                body: formData
+              }).then(
+                response => response.json()
+              ).then(
+                success => console.log(success)
+              ).catch(
+                error => console.log(error)
+              );
             };
-
-            // Start upload
-            xhr.open('POST', document.getElementById('file-upload-form').action, true);
-            xhr.setRequestHeader('X-File-Name', file.name);
-            xhr.setRequestHeader('X-File-Size', file.size);
-            xhr.setRequestHeader('Content-Type', 'multipart/form-data');
-            xhr.send(file);
+            upload(file);
           } else {
             output('Please upload a smaller file (< ' + fileSizeLimit + ' MB).');
           }
-        }
+        })
       }
 
       // Check for the various File API support.
