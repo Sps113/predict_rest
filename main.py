@@ -15,6 +15,7 @@ from os import path
 import os
 import pandas as pd
 import ast
+
 from pprint import pprint
 app = Flask(__name__)
 api = Api(app)
@@ -207,7 +208,8 @@ class ImageHandler(Resource):
             return redirect(request.url)
         pprint(file.filename)
         if file and self.allowed_file(filename=file.filename):
-            file_path = os.path.join(uploads_dir, secure_filename(file.filename))
+            cwd = os.getcwd()
+            file_path = os.path.join(cwd, uploads_dir, secure_filename(file.filename))
             file.save(file_path)
             bash_command = "./predict  --docker-image nima-cpu --base-model-name MobileNet --weights-file $(pwd)/image_quality_assessment/models/MobileNet/weights_mobilenet_aesthetic_0.07.hdf5 --image-source $(pwd)/uploads/"
             process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
