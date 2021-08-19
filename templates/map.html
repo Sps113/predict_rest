@@ -38,6 +38,12 @@
         <form method="post">
             <input type="text" id="lat" readonly="yes" style="height: 20px;width: 102px;"><br>
             <input type="text" id="lng" readonly="yes" style="height: 20px;width: 102px;"><br>
+            <select id="nearest1">
+                <option>Choose first nearest category</option>
+            </select><br>
+            <select id="nearest2">
+                <option>Choose first nearest category</option>
+            </select><br>
             <input type="text" id="year" style="height: 20px;width: 102px;">
         </form>
         <button id="confirmPosition" onClick="sendRequest();">Send</button>
@@ -48,6 +54,19 @@
 <script>
 var map;
 var marker = false;
+var select_nearest1 = document.getElementById("nearest1");
+var select_nearest2 = document.getElementById("nearest2");
+var categories = ["Accessory", "Bakery", "Bank", "Beauty Care", "Betting", "Bookstore", "Cafe", "Cargo", "Charcuterie", "Clothing", "Depot", "Eatery", "Educational", "Empty", "Florist", "Furniture Store", "Gas Station", "Hardware Store", "Health", "Home Goods", "Jeweler", "Market", "Mobile Store", "Natural Gas Station", "Office", "Pharmacy", "Photographer Store", "Shoe and Bag Store", "Spice Store", "Toy and Game Store"]
+
+for(var i = 0; i < categories.length; i++) {
+    var opt = categories[i];
+    var el1 = document.createElement("option");
+    var el2 = document.createElement("option");
+    el1.textContent = opt; el2.textContent = opt;
+    el1.value = i+1; el2.value = i+1;
+    select_nearest1.appendChild(el1);
+    select_nearest2.appendChild(el2);
+}
 
 
 function initMap() {
@@ -108,8 +127,10 @@ function sendRequest () {
     var lat = document.getElementById('lat').value
     var lng = document.getElementById('lng').value
     var year = document.getElementById('year').value
-    var data = {"x_coord": lng, "y_coord": lat, "year": year };
-    fetch("/", {
+    var nearest1 = document.getElementById('nearest1').value
+    var nearest2 = document.getElementById('nearest2').value
+    var data = {"x_coord": lng, "y_coord": lat, "year": year, "nearest1": nearest1, "nearest2": nearest2 };
+    fetch("/geo", {
       method: "POST",
       headers: {
         'Content-Type': 'application/json',
@@ -124,7 +145,6 @@ function sendRequest () {
     });
 }
 function getCategory ($i) {
-    var categories = ["Accessory", "Bakery", "Bank", "Beauty Care", "Betting", "Bookstore", "Cafe", "Cargo", "Charcuterie", "Clothing", "Depot", "Eatery", "Educational", "Empty", "Florist", "Furniture Store", "Gas Station", "Hardware Store", "Health", "Home Goods", "Jeweler", "Market", "Mobile Store", "Natural Gas Station", "Office", "Pharmacy", "Photographer Store", "Shoe and Bag Store", "Spice Store", "Toy and Game Store"]
     return categories[parseInt($i) -1 ];
 }
 

@@ -37,27 +37,34 @@ class Category(Resource):
         parser.add_argument('x_coord', required=True)  # add args
         parser.add_argument('y_coord', required=True)
         parser.add_argument('year', required=True)
+        parser.add_argument('nearest1', required=True)
+        parser.add_argument('nearest2', required=True)
+
 
         args = parser.parse_args()
         x_coord = float(args['x_coord'])
-        # x_coord = 2537790 - 51943.4 * x
+        x = 2537790 - 51943.4 * x_coord
 
         y_coord = float(args['y_coord'])
-        # y_coord = 4546360 - 1.00002 * y
+        y = 4546360 - 1.00002 * y_coord
         year = int(args['year'])
+        nearest1 = int(args['nearest1'])
+        nearest2 = int(args['nearest2'])
 
         # Load the dataset for training and testing
-        data = pd.read_csv("/home/serg/code/predict/data2.csv")
+        data = pd.read_csv(os.getcwd() + "/data2.csv")
         # Define a field of function y = W*x + a, y = categories, x = features
         categories = data['Categories']
 
         # Define fields of variables
 
-        numeric_features_list = ["x_coord", "y_coord", "Year", "Area (m2)", "Population", "Female", "Male", "Population Density",
-                                 "Household (person)",
-                                 "Per Capita Income", "Housing Unit Prices For Sale", "Housing Unit Prices For Rent",
-                                 "Commercial Property Unit Prices For Sale",
-                                 "Commercial Property Unit Prices For Rent"]
+        numeric_features_list = ["x_coord", "y_coord", "Year" , "nearest1", "nearest2"
+                                 #"Area (m2)", "Population", "Female", "Male", "Population Density",
+                                 #"Household (person)",
+                                 #"Per Capita Income", "Housing Unit Prices For Sale", "Housing Unit Prices For Rent",
+                                 #"Commercial Property Unit Prices For Sale",
+                                 #"Commercial Property Unit Prices For Rent"
+                                 ]
 
         numeric_features = data[numeric_features_list]
 
@@ -73,37 +80,24 @@ class Category(Resource):
         from sklearn.model_selection import train_test_split
 
         # Shuffle and split the data
-        X_train, X_test, y_train, y_test = train_test_split(numeric_features, categories, test_size=0.20,
+        X_train, X_test, y_train, y_test = train_test_split(numeric_features, categories, test_size=0.10,
                                                             random_state=30)
         # Imbalanced
-        from imblearn.over_sampling import SVMSMOTE
-        from imblearn.over_sampling import SMOTE
+
         from imblearn.over_sampling import RandomOverSampler
-        from imblearn.over_sampling import KMeansSMOTE
-        from imblearn.over_sampling import SMOTENC
-        # from imblearn.over_sampling import ADASYN
-        from imblearn.over_sampling import BorderlineSMOTE
 
         # remove warning
         import warnings
         warnings.filterwarnings('ignore')
 
-        # smote = SMOTE(random_state = 101)
-        # bsmote = BorderlineSMOTE(random_state = 101, kind = 'borderline-1')
-        # svmsmote = SVMSMOTE(random_state = 101)
         ros = RandomOverSampler(random_state=101)
-        # smotenc = SMOTENC(random_state=101, categorical_features=[0])
-        # ksmote = KMeansSMOTE(random_state=101)
         X_train, y_train = ros.fit_resample(X_train, y_train)
 
         # K-neighbors classifier
 
-        from sklearn.neighbors import KNeighborsClassifier
-        from sklearn.metrics import classification_report
         from sklearn.tree import DecisionTreeClassifier
         dtc = DecisionTreeClassifier()
 
-        knn = KNeighborsClassifier()
         dtc.fit(X_train, y_train)
         Y_pred = dtc.predict(X_test)
         Y_test = y_test
@@ -183,44 +177,11 @@ class Category(Resource):
         else:
             return {'error': "x:" + str(x_coord) + " y:" + str(y_coord) + ' - Place not in our Neighbourhoods'}, 200
 
-        input_total = [x_coord] + [y_coord] + [year] + dop
+        input_total =  [x_coord] + [y_coord] + [year] + [nearest1] + [nearest2]
         data = dtc.predict([input_total])  # convert dataframe to dictionary
         return {'category': data[0].tolist(), 'neighborhood': neighborhood}, 200  # return data and 200 OK code
 
-
-class ImageHandler(Resource):
-    def get(self):
-        resp = make_response(render_template('image.html'), 200)
-        return resp
-
-    def allowed_file(self, filename):
-        return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-    def post(self):
-
-        file_path = os.path.join(uploads_dir, secure_filename("save.jpg"))
-
-        file = request.files['file']
-        # If the user does not select a file, the browser submits an
-        # empty file without a filename.
-        if file.filename == '':
-            # flash('No selected file')
-            return redirect(request.url)
-        pprint(file.filename)
-        if file and self.allowed_file(filename=file.filename):
-            cwd = os.getcwd()
-            file_path = os.path.join(cwd, uploads_dir, secure_filename(file.filename))
-            file.save(file_path)
-            bash_command = "./predict  --docker-image nima-cpu --base-model-name MobileNet --weights-file $(pwd)/image_quality_assessment/models/MobileNet/weights_mobilenet_aesthetic_0.07.hdf5 --image-source $(pwd)/uploads/"
-            process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
-            output, error = process.communicate()
-
-            return True
-
-
 api.add_resource(Category, '/geo')
-api.add_resource(ImageHandler, '/')
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
